@@ -27,6 +27,20 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_joined = DateTimeField(default=now)
     avatar = ImageField(upload_to='avatars/', blank=True, null=True)
 
+    language =  CharField(
+        max_length=5,
+        choices=[
+            ('en', 'English'),
+            ('ru', 'Russian'),
+            ('kk', 'Kaxakh')
+        ],
+        default='en'
+    )
+    timezone = CharField(
+        max_length=50,
+        default='UTC'
+    )
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 

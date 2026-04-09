@@ -24,6 +24,9 @@ class PostViewSet(ModelViewSet):
     lookup_field = 'slug'
 
     def list(self, request, *args, **kwargs):
+        lang = getattr(request, "LANGUAGE_CODE", "en")
+        cache_key = f'published_posts_{lang}'
+
         cached_posts = cache.get('published_posts')
         if cached_posts:
             logger.debug("Returning cached posts")
@@ -32,14 +35,15 @@ class PostViewSet(ModelViewSet):
         queryset = self.get_queryset().filter(status=Post.Status.PUBLISHED)
         serializer = self.get_serializer(queryset, many=True)
 
-        cache.set('published_posts', serializer.data, timeout=60)
-        logger.debug("Posts cached")
+        cache.set(cache_key, serializer.data, timeout=60)
+        logger.debug("Posts cached for language: %s", lang)
 
         return Response(serializer.data)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-        cache.delete('published_posts')
+        for l in ['en', 'ru', 'kk']:
+            cache.delete(f'published_posts_{l}')
         logger.info(
             'Post created by user %s: %s',
             self.request.user.email,
@@ -48,7 +52,8 @@ class PostViewSet(ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save()
-        cache.delete('published_posts')
+        for l in ['en', 'ru', 'kk']:
+            cache.delete(f'published_posts_{l}')
         logger.info(
             'Post updated by user %s: %s',
             self.request.user.email,
@@ -56,7 +61,8 @@ class PostViewSet(ModelViewSet):
         )
 
     def perform_destroy(self, instance):
-        cache.delete('published_posts')
+        for l in ['en', 'ru', 'kk']:
+            cache.delete(f'published_posts_{l}')
         logger.warning(
             'Post deleted by user %s: %s',
             self.request.user.email,
@@ -69,7 +75,7 @@ class PostViewSet(ModelViewSet):
         post = self.get_object()
 
         if request.method == 'GET':
-            serializer = CommentSerializer(post.commments.all(), many=True)
+            serializer = CommentSerializer(post.comments.all(), many=True)
             logger.debug('Comments fetched for post %s', post.slug)
             return Response(serializer.data)
 

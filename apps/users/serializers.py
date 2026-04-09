@@ -1,5 +1,6 @@
 from rest_framework.serializers import ModelSerializer, CharField, ValidationError
 from django.contrib.auth import get_user_model
+from zoneinfo import available_timezones
 
 User = get_user_model()
 
@@ -20,3 +21,18 @@ class RegisterSerializer(ModelSerializer):
         validated_data.pop('password2')
         user = User.objects.create_user(**validated_data)
         return user
+    
+class LanguageSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('language')
+
+class TimezoneSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('timezone',)
+
+    def validate_timezone(self, value):
+        if value not in available_timezones():
+            raise ValidationError("invalid timezone")
+        return value

@@ -62,10 +62,15 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',  # ← ИСПРАВЛЕНО
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',  
     ),
 }
-
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Blog API',
+    'DESCRIPTION': 'API for BLog Project, hw2 with multilingual support',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False
+}
 DATABASES = {}
 
 STATIC_URL = '/static/'
