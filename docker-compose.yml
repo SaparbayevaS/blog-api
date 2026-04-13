@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    command: daphne -b 0.0.0.0 -p 8000 settings.asgi:application
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    env_file:
+      - settings/.env
+
+  celery_worker:
+    build: .
+    command: celery -A settings worker -l info
+    depends_on:
+      - redis
+    env_file:
+      - settings/.env
+
+  celery_beat:
+    build: .
+    command: celery -A settings beat -l info
+    depends_on:
+      - redis
+    env_file:
+      - settings/.env
+
+  flower:
+    build: .
+    command: celery -A settings flower --basic-auth=$BLOG_FLOWER_USER:$BLOG_FLOWER_PASSWORD
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    env_file:
+      - settings/.env
+
+volumes:
+  sqlite_data:
+
+
+    

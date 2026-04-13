@@ -2,7 +2,12 @@ Django>=4.2
 djangorestframework
 djangorestframework_simplejwt
 django-redis
+channels
+channels-redis
+daphne
+celery
 redis
+flower
 django-ratelimit
 drf-nested-routers
 python-decouple

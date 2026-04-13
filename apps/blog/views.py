@@ -5,7 +5,14 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import BasePermission, SAFE_METHODS, IsAuthenticatedOrReadOnly
 from django.core.cache import cache
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from apps.notifications.models import Notification
 import logging
+from apps.notifications.tasks import process_new_comment
+import json
+import asyncio
+from django.http import StreamingHttpResponse
 
 logger = logging.getLogger('apps.blog')
 
@@ -75,18 +82,60 @@ class PostViewSet(ModelViewSet):
         post = self.get_object()
 
         if request.method == 'GET':
-            serializer = CommentSerializer(post.comments.all(), many=True)
+            serializer = CommentSerializer(Comment.objects.filter(post=post), many=True)
             logger.debug('Comments fetched for post %s', post.slug)
             return Response(serializer.data)
 
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(author=request.user, post=post)
+            comment = serializer.save(author=request.user, post=post)
+
+            process_new_comment.delay(comment.id)
+
             logger.info(
                 "New comment by %s on post %s",
                 request.user.email,
                 post.slug
             )
-            return Response(serializer.data, status=201)
+
+
+            return Response(CommentSerializer(comment).data, status=201)
 
         return Response(serializer.errors, status=400)
+    
+
+async def post_stream(request):
+    async def event_stream():
+        last_id = 0
+
+        while True:
+            def get_posts():
+                return list(
+                    Post.objects.filter(
+                        status=Post.Status.PUBLISHED,
+                        id__gt=last_id
+                    ).select_related("author").order_by("id")
+                )
+            posts = await asyncio.to_thread(get_posts)
+
+            for post in posts:
+                data = {
+                    "post_id": post.id,
+                    "title": post.title,
+                    "slug": post.slug,
+                    "author": {
+                        "id": post.author.id,
+                        "email": post.author.email,
+                    },
+                    "published_at": str(post.created_at),
+                }
+
+                yield f"data: {json.dumps(data)}\n\n"
+                last_id = post.id
+
+            await asyncio.sleep(2)
+
+    return StreamingHttpResponse(
+        event_stream(),
+        content_type="text/event-stream"
+    )

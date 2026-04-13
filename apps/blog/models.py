@@ -17,8 +17,9 @@ class Tag(Model):
     
 class Post(Model):
     class Status(TextChoices):
-        DRAFT = 'draft'
-        PUBLISHED = 'published'
+        DRAFT = "draft", "Draft"
+        PUBLISHED = "published", "Published",
+        SCHEDULED = "scheduled", "Scheduled"
 
     author = ForeignKey(User, on_delete=CASCADE)
     title = CharField(max_length=200)
@@ -29,6 +30,8 @@ class Post(Model):
     status = CharField(max_length=10, choices=Status.choices, default=Status.DRAFT)
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)
+
+    publish_at = DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.title

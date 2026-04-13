@@ -22,11 +22,17 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Users auth
     path('api/auth', include('apps.users.urls')),
     path('api/', include('apps.blog.urls')),
+
+    # Notigication
+    path('api/notifications/', include('apps.notifications.urls')),
+    # jWT
     path('api/auth/token/', RateLimitedTokenObtainPairView.as_view()),
     path('apt/auth/token/refresh/', TokenRefreshView.as_view()),
 
+    # API Schema
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc')

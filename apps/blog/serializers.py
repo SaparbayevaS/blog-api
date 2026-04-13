@@ -2,18 +2,18 @@ from rest_framework.serializers import ModelSerializer, StringRelatedField
 from .models import Post, Comment, Category, Tag
 
 class CategorySerializer(ModelSerializer):
-    class Mets: 
+    class Meta: 
         model = Category
         fields = '__all__'
 
 class TagSerializer(ModelSerializer):
-    class Mets:
+    class Meta:
         model = Tag
         fields = '__all__'
 
 class CommentSerializer(ModelSerializer):
     author = StringRelatedField(read_only=True)
-    class Mets:
+    class Meta:
         model = Comment
         fields = '__all__'
 

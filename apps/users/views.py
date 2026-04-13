@@ -6,7 +6,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import RegisterSerializer, LanguageSerializer, TimezoneSerializer
 import logging
 from django.contrib.auth import get_user_model
-from django_ratelimit.decorators import ratelimit, action
+from django_ratelimit.decorators import ratelimit
+from rest_framework.decorators import action
 from django.utils.decorators import method_decorator
 
 logger = logging.getLogger('apps.users')

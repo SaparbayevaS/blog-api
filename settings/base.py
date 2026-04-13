@@ -3,11 +3,15 @@ from datetime import timedelta
 
 from .conf import *
 
+from celery.schedules import crontab
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = BLOG_SECRET_KEY
 DEBUG = BLOG_DEBUG
 ALLOWED_HOSTS = BLOG_ALLOWED_HOSTS
+
+ASGI_APPLICATION = 'settings.asgi.application'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -21,8 +25,13 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'django_ratelimit',   
 
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
+
     'apps.users',
     'apps.blog',
+    'apps.notifications',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -140,4 +149,31 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",  # ← ИСПРАВЛЕНО
         }
     }
+}
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)]
+        }
+    }
+}
+
+
+CELERY_BROKER_URL = "redis://localhost:6379/1"
+CELERY_RESULT_BACKEND =  "redis://localhost:6379/1"
+
+CELERY_BEAT_SCHEDULE = {
+    "publish_scheduled_posts": {
+        "task": "apps.blog.tasks.publish.scheduled.posts",
+        "schedule": 60.0,
+    },
+    "clear_expired_notifications": {
+        "task": "apps.notifications.tasks.clear_expired_notifications",
+        "schedule": crontab(hour=3, minute=0),
+    },
+    "generate_daily_stats": {
+        "task": "apps.blog.tasks.generate_daily_stats",
+        "schedule": crontab(hour=3, minute=3),
+    }, 
 }
