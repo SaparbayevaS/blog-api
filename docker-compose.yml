@@ -10,12 +10,15 @@ services:
   web:
     build: .
     command: daphne -b 0.0.0.0 -p 8000 settings.asgi:application
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       - redis
     env_file:
       - settings/.env
+    volumes:
+      - .:/app
+      - sqlite_data:/app/db
 
   celery_worker:
     build: .
@@ -24,27 +27,39 @@ services:
       - redis
     env_file:
       - settings/.env
+    volumes:
+      - .:/app
 
   celery_beat:
     build: .
-    command: celery -A settings beat -l info
+    command: celery -A settings beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
     depends_on:
       - redis
     env_file:
       - settings/.env
+    volumes:
+      - .:/app
 
   flower:
     build: .
-    command: celery -A settings flower --basic-auth=$BLOG_FLOWER_USER:$BLOG_FLOWER_PASSWORD
+    command: celery -A settings flower --basic-auth=${BLOG_FLOWER_USER}:${BLOG_FLOWER_PASSWORD}
     ports:
       - "5555:5555"
     depends_on:
       - redis
     env_file:
       - settings/.env
+    volumes:
+      - .:/app
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
 
 volumes:
   sqlite_data:
-
-
-    

@@ -11,10 +11,11 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+
 @shared_task(
     autoretry_for=(Exception,),
     retry_backoff=True,
-    max_retriess=3
+    max_retries=3
 )
 def invalidate_posts_cache():
     cache.clear()
@@ -23,9 +24,9 @@ def invalidate_posts_cache():
 @shared_task(
     autoretry_for=(Exception,),
     retry_backoff=True,
-    max_retriess=3
+    max_retries=3
 )
-def publish_schedule_posts():
+def publish_scheduled_posts():
     posts = Post.objects.filter(
         status=Post.Status.SCHEDULED,
         publish_at__lte=timezone.now()
@@ -58,7 +59,7 @@ def publish_schedule_posts():
 @shared_task(
     autoretry_for=(Exception,),
     retry_backoff=True,
-    max_retriess=3
+    max_retries=3
 )
 def generate_daily_stats():
     now = timezone.now()

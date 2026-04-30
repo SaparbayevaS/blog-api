@@ -12,3 +12,7 @@ django-ratelimit
 drf-nested-routers
 python-decouple
 Pillow
+drf-spectacular
+drf-spectacular-sidecar
+httpx
+django-celery-beat

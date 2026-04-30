@@ -1,7 +1,10 @@
 import os
 from celery import Celery
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings.env.local")
+os.environ.setdefault(
+    "DJANGO_SETTINGS_MODULE",
+    "settings.base"  
+)
 
 app = Celery("blog")
 

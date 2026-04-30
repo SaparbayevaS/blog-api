@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'apps.blog',
     'apps.notifications',
     'channels',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -80,9 +81,15 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False
 }
-DATABASES = {}
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
+    }
+}
 
 STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -96,16 +103,12 @@ SIMPLE_JWT = {
 
 # LOGGING
 LOGGING = {
+
     'version': 1,
     'disable_existing_loggers': False,
-
     'formatters': {
         'simple': {
             'format': '[{levelname}] {message}',
-            'style': '{',
-        },
-        'verbose': {
-            'format': '{asctime} [{levelname}] {name}: {message}',
             'style': '{',
         },
     },
@@ -113,31 +116,15 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
             'formatter': 'simple',
-        },
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs/app.log',
-            'level': 'WARNING',
-            'maxBytes': 5 * 1024 * 1024,
-            'backupCount': 3,
-            'formatter': 'verbose',
         },
     },
 
-    'loggers': {
-        'apps.users': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
-        'apps.blog': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': False,
-        },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
     },
+
 }
 
 # REDIS CACHE
@@ -154,26 +141,28 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("localhost", 6379)]
+            "hosts": [("redis", 6379)]
         }
     }
 }
 
-
-CELERY_BROKER_URL = "redis://localhost:6379/1"
-CELERY_RESULT_BACKEND =  "redis://localhost:6379/1"
+CELERY_BROKER_URL = BLOG_REDIS_URL
+CELERY_RESULT_BACKEND = BLOG_REDIS_URL
 
 CELERY_BEAT_SCHEDULE = {
+
     "publish_scheduled_posts": {
-        "task": "apps.blog.tasks.publish.scheduled.posts",
+        "task": "apps.blog.tasks.publish_scheduled_posts",
         "schedule": 60.0,
     },
+
     "clear_expired_notifications": {
         "task": "apps.notifications.tasks.clear_expired_notifications",
         "schedule": crontab(hour=3, minute=0),
     },
+
     "generate_daily_stats": {
         "task": "apps.blog.tasks.generate_daily_stats",
         "schedule": crontab(hour=3, minute=3),
-    }, 
+    },
 }
